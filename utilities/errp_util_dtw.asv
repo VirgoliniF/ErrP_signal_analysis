@@ -1,0 +1,53 @@
+function delays = errp_find_dtw(eeg, refchannel, eTYP, ePOS, epoch, samplerate, errorCodecs, correctCodecs )
+    delays = ones(length(ePOS),1);
+
+    ntrials = length(ePOS);
+
+    errorPOSITIONS = [];
+
+    for tryID = 1:ntrials
+        if ismember(eTYP(tryID), errorCodecs)
+            errorPOSITIONS(length(errorPOSITIONS) + 1) = ePOS(tryID);
+        end
+    end
+
+    base_err_sign = eeg(errorPOSITIONS(1) + epoch(1)*samplerate: errorPOSITIONS(1) + epoch(2)*samplerate, refchannel);
+
+    d = zeros(length(errorPOSITIONS)-1,1);
+
+    t = -1500:1000;
+
+
+    % parfor index_erros = 2:length(errorPOSITIONS)
+    %     dd = zeros(length(t),1);
+    % 
+    %     for i = 1:length(t)
+    %         shift = t(i);
+    %         sing = eeg(errorPOSITIONS(index_erros) + epoch(1)*samplerate + shift: errorPOSITIONS(index_erros) + epoch(2)*samplerate + shift, refchannel);
+    %         dd(i) = dtw(base_err_sign, sing);
+    %     end
+    %     %sing = eeg(errorPOSITIONS(index_erros) + epoch(1)*samplerate: errorPOSITIONS(index_erros) + epoch(2)*samplerate, refchannel);
+    %     %[~, ix, iy] = dtw(base_err_sign, sing);
+    %     [~,i_min] = min(dd);
+    %     d(index_erros -1) = t(i_min);
+    % end
+    % 
+    % delays = delays * mean(d)
+
+     parfor index_erros = 2:length(ntrials)
+        dd = zeros(length(t),1);
+
+        for i = 1:length(t)
+            shift = t(i);
+            sing = eeg(errorPOSITIONS(index_erros) + epoch(1)*samplerate + shift: errorPOSITIONS(index_erros) + epoch(2)*samplerate + shift, refchannel);
+            dd(i) = dtw(base_err_sign, sing);
+        end
+        %sing = eeg(errorPOSITIONS(index_erros) + epoch(1)*samplerate: errorPOSITIONS(index_erros) + epoch(2)*samplerate, refchannel);
+        %[~, ix, iy] = dtw(base_err_sign, sing);
+        [~,i_min] = min(dd);
+        d(index_erros -1) = t(i_min);
+    end
+
+    delays = delays * mean(d)
+
+end
